@@ -1,16 +1,19 @@
 import java.util.Scanner;
 
 public class main {
+
+    public static final String BLACK = "█";
+    public static final String WHITE = " ";
+    public static final String EMPTY = "#";
+
     public static void main(String[] args) {
-        String BLACK = "█";
-        String WHITE = " ";
-        String EMPTY = "#";
         String[][] board = new String[8][8];
 
-        int place_output = 0;
-        int num = 0;
         String turn = BLACK;
         String opponent = WHITE;
+
+        int Y = 0;
+        int X = 0;
 
         for (int row = 0; row <= 7; row++) {
             for (int col = 0; col <= 7; col++) {
@@ -24,108 +27,136 @@ public class main {
         board[4][3] = WHITE;
 
         while (true) {
-            display(board);
             if (count(board, EMPTY) == 0) {
                 System.out.println("black team score: " + String.valueOf(count(board, BLACK)));
                 System.out.println("black team score: " + String.valueOf(count(board, WHITE)));
                 break;
             }
             while (true) {
+                display(board);
                 Scanner scanner = new Scanner(System.in);
 
+                System.out.println("it is " + turn + "'s turn");
                 System.out.print("enter the Y cord: ");
-                int Y = scanner.nextInt();
+                while (true) {
+                    if (scanner.hasNextInt()) {
+                        Y = scanner.nextInt();
+                        if (Y > 7) {
+                            System.out.println("Please neter a number from 0-7");
+                            scanner.next();
+                            continue;
+                        }
+                        break;
+                    } else {
+                        System.out.println("Please neter a NUMBER from 0-7");
+                        scanner.next();
+                    }
+                }
 
                 System.out.print("enter the X cord: ");
-                int X = scanner.nextInt();
+                while (true) {
+                    if (scanner.hasNextInt()) {
+                        X = scanner.nextInt();
+                        if (X > 7) {
+                            System.out.println("Please neter a number from 0-7");
+                            scanner.next();
+                            continue;
+                        }
+                        break;
+                    } else {
+                        System.out.println("please neter a NUMBER from 0-7");
+                        scanner.next();
+                    }
+                }
 
-                String[][] old_board = new String[8][8];
-                old_board = deep_copy(board, old_board);
-
-                place_output = place(EMPTY, BLACK, WHITE, board, turn, X, Y, opponent, old_board);
-                if (place_output == 1) {
+                if (is_possible(board, turn, X, Y)) {
+                    board = (String[][]) place(board, turn, X, Y, opponent);
                     break;
                 } else {
-                    System.out.println("invalid input, please try again");
-                    display(board);
+                    System.out.println("Illegal move, please try again");
                 }
             }
-            if (turn.equals(BLACK)) {
-                opponent = BLACK;
-                turn = WHITE;
-            } else if (turn.equals(WHITE)) {
-                opponent = WHITE;
-                turn = BLACK;
-            }
+        if (turn.equals(BLACK)) {
+            turn = WHITE;
+            opponent = BLACK;
+        } else {
+            turn = BLACK;
+            opponent = WHITE;
+        }
+        for (int i = 0; i < 50; ++i) System.out.println();
         }
     }
 
-    public static int place(String EMPTY, String BLACK, String WHITE, String[][] board, String turn, int x_in, int y_in, String opponent, String[][] old_board) {
+    public static Object place(String[][] board, String turn, int x_in, int y_in, String opponent) {
+        int y_num = 0;
+        int x_num = 0;
 
-        String[][] new_board = new String[8][8];
-        new_board = deep_copy(board, new_board);
-
-        new_board[y_in][x_in] = turn;
-
-        int x_num;
-        int y_num;
-
-        boolean is_possible = false;
-        boolean final_is_possible = false;
-
-        String[][] temp_board = new String[8][8];
-        temp_board = deep_copy(board, temp_board);
+        String[][] temp_board = deep_copy(board);
 
         for (int x = -1; x < 2; x++) {
             for (int y = -1; y < 2; y++) {
-                System.out.println(y);
-                System.out.println(x);
-                y_num = y_in + y;
-                x_num = x_in + x;
-
-                try {
-                    new_board[y_num][x_num].equals(opponent);
-                } catch(Exception e) {
+                if (y == 0 && x == 0) {
                     continue;
                 }
-                //TODO: REWRITE FUNCTION
-                // COPY CORDS TO A LIST AND THEN CHECK CORDS TO LIST TO SEE IF ITS
+                y_num = y_in + y;
+                x_num = x_in + x;
                 while (true) {
-                    System.out.println("----------------------------------------------------------------------------------");
-                    System.out.println(y_num);
-                    System.out.println(x_num);
-                    display(new_board);
-                    display(temp_board);
-                    if (new_board[y_num][x_num].equals(opponent)) {
-                        temp_board[y_num][x_num] = turn;
-                        y_num += y;
-                        x_num += x;
-                        is_possible = true;
-                    } else if (new_board[y_num][x_num].equals(turn)) {
-                        if (is_possible) {
-                            final_is_possible = true;
-                            new_board = temp_board;
-                            System.out.println("VICTORY!");
+                    try {
+                        if (board[y_num][x_num].equals(turn)) {
+                            board = deep_copy(temp_board);
+                        } if (board[y_num][x_num].equals(EMPTY)) {
+                            temp_board = deep_copy(board);
                             break;
                         } else {
-                            is_possible = false;
-                            temp_board = new_board;
-                            break;
+                            temp_board[y_num][x_num] = turn;
+                            y_num += y;
+                            x_num += x;
                         }
-                    } else {
-                        is_possible = false;
-                        temp_board = new_board;
+                    } catch (Exception e) {
+                        temp_board = deep_copy(board);
                         break;
                     }
                 }
             }
         }
-        if (final_is_possible) {
-            board = deep_copy(temp_board, board);
-            return 1;
-        } else {
-            return 0;
+        board[y_in][x_in] = turn;
+        return board;
+    }
+
+    public static boolean is_possible(String[][] board, String turn, int x_in, int y_in) {
+        int y_num = 0;
+        int x_num = 0;
+        boolean enemy_hit = false;
+
+        for (int x = -1; x < 2; x++) {
+            for (int y = -1; y < 2; y++) {
+                if (y == 0 && x == 0) {
+                    continue;
+                }
+                y_num = y_in + y;
+                x_num = x_in + x;
+                while (true) {
+                    try {
+                        if (board[y_num][x_num].equals(turn)) {
+                            if (enemy_hit) {
+                                return true;
+                            }
+                        } if (board[y_num][x_num].equals(EMPTY)) {
+                            enemy_hit = false;
+                            break;
+                        } else {
+                            enemy_hit = true;
+                            y_num += y;
+                            x_num += x;
+                        }
+                    } catch (Exception e) {
+                        enemy_hit = false;
+                        break;
+                    }
+                }
+            }
         }
+    return false;
     }
 
     public static void display(String[][] board) {
@@ -157,12 +188,12 @@ public class main {
         }
         return count;
     }
-    public static String[][] deep_copy(String[][] old_array, String[][] new_array) {
+    public static String[][] deep_copy(String[][] old_array) {
         int num1 = old_array.length;
-        int num2 = new_array.length;
+        String[][] new_array = new String[8][8];
 
         for (int y = 0; y < num1; y++) {
-            for (int x = 0; x < num2; x++) {
+            for (int x = 0; x < old_array[y].length; x++) {
                 new_array[y][x] = old_array[y][x];
             }
         }
